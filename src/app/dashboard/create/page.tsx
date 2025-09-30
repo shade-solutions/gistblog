@@ -5,27 +5,30 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { H1 } from "@/components/ui/typography";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, Save } from "lucide-react";
+import { ChevronLeft, Save, Eye } from "lucide-react";
 import { useState } from "react";
 
 export default function CreatePostPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [content, setContent] = useState<string>("");
+  const [title, setTitle] = useState<string>("");
+  const [excerpt, setExcerpt] = useState<string>("");
+  const [tags, setTags] = useState<string>("");
+  const [readTime, setReadTime] = useState<string>("");
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    const formData = new FormData(e.currentTarget);
     const postData = {
-      title: formData.get("title") as string,
-      excerpt: formData.get("excerpt") as string,
-      content: formData.get("content") as string,
-      tags: formData.get("tags") as string,
-      readTime: formData.get("readTime") as string,
+      title,
+      excerpt,
+      content,
+      tags,
+      readTime,
     };
 
     try {
@@ -50,15 +53,33 @@ export default function CreatePostPage() {
     }
   };
 
+  const handleExport = () => {
+    const blob = new Blob([content], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${title || "post"}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="container py-8">
-      <div className="flex items-center mb-6">
+      <div className="flex items-center justify-between mb-6">
         <Button variant="ghost" asChild className="pl-0">
           <Link href="/dashboard">
             <ChevronLeft className="mr-2 h-4 w-4" />
             Back to dashboard
           </Link>
         </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExport}>
+            <Eye className="mr-2 h-4 w-4" />
+            Export MD
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -72,22 +93,44 @@ export default function CreatePostPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="title">Title</Label>
-              <Input id="title" name="title" placeholder="Enter post title" required />
+              <Input 
+                id="title" 
+                placeholder="Enter post title" 
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required 
+              />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="excerpt">Excerpt</Label>
-              <Textarea id="excerpt" name="excerpt" placeholder="Enter a short description" required />
+              <Input 
+                id="excerpt" 
+                placeholder="Enter a short description" 
+                value={excerpt}
+                onChange={(e) => setExcerpt(e.target.value)}
+                required 
+              />
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="tags">Tags</Label>
-                <Input id="tags" name="tags" placeholder="Enter tags separated by commas" />
+                <Input 
+                  id="tags" 
+                  placeholder="Enter tags separated by commas" 
+                  value={tags}
+                  onChange={(e) => setTags(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="readTime">Read Time</Label>
-                <Input id="readTime" name="readTime" placeholder="e.g., 5 min read" />
+                <Input 
+                  id="readTime" 
+                  placeholder="e.g., 5 min read" 
+                  value={readTime}
+                  onChange={(e) => setReadTime(e.target.value)}
+                />
               </div>
             </div>
 
@@ -95,9 +138,10 @@ export default function CreatePostPage() {
               <Label htmlFor="content">Content</Label>
               <Textarea 
                 id="content" 
-                name="content"
                 placeholder="Write your post content here (Markdown supported)" 
-                className="min-h-[300px]" 
+                className="min-h-[300px] font-mono text-sm" 
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
                 required
               />
             </div>
