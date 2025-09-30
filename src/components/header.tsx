@@ -21,6 +21,9 @@ export function Header() {
           <Link href="/contact" className="text-sm font-medium hover:underline underline-offset-4">
             Contact
           </Link>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/dashboard">Dashboard</Link>
+          </Button>
         </nav>
       </div>
     </header>

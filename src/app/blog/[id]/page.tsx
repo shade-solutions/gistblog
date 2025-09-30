@@ -1,4 +1,3 @@
-import { getBlogPostById } from "@/lib/blog";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,43 +12,47 @@ import {
   BreadcrumbSeparator 
 } from "@/components/ui/breadcrumb";
 import Link from "next/link";
-import { ChevronLeft, Calendar, Clock, User } from "lucide-react";
+import { ChevronLeft, Calendar, Clock, User, Eye } from "lucide-react";
+import { BlogPost, getBlogPostById } from "@/lib/blog";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface BlogPostPageProps {
-  params: {
+  params: Promise<{
     id: string;
+  }>;
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
+  const post = getBlogPostById(resolvedParams.id);
+
+  if (!post) {
+    return {
+      title: "Post Not Found",
+    };
+  }
+
+  return {
+    title: post.title,
+    description: post.excerpt,
+    openGraph: {
+      title: post.title,
+      description: post.excerpt,
+      type: "article",
+      publishedTime: post.date,
+      authors: [post.author.name],
+    },
   };
 }
 
-export default function BlogPostPage({ params }: BlogPostPageProps) {
-  const post = getBlogPostById(params.id);
+export default async function BlogPostPage({ params }: BlogPostPageProps) {
+  const resolvedParams = await params;
+  const post = getBlogPostById(resolvedParams.id);
 
   if (!post) {
     notFound();
   }
-
-  // Simple markdown parser for demonstration
-  const renderContent = (content: string) => {
-    return content.split('\n').map((line, index) => {
-      if (line.startsWith('# ')) {
-        return <H1 key={index} className="mt-8 first:mt-0">{line.substring(2)}</H1>;
-      } else if (line.startsWith('## ')) {
-        return <H2 key={index} className="mt-8 first:mt-0">{line.substring(3)}</H2>;
-      } else if (line.startsWith('### ')) {
-        return <H3 key={index} className="mt-6 first:mt-0">{line.substring(4)}</H3>;
-      } else if (line.startsWith('```')) {
-        return (
-          <pre key={index} className="bg-muted p-4 rounded-lg mt-4 overflow-x-auto">
-            <code>{line.substring(3)}</code>
-          </pre>
-        );
-      } else if (line.trim() === '') {
-        return <br key={index} />;
-      } else {
-        return <P key={index}>{line}</P>;
-      }
-    });
-  };
 
   return (
     <div className="container py-8">
@@ -97,6 +100,13 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
               <Clock className="mr-2 h-4 w-4" />
               {post.readTime}
             </div>
+            <div className="flex items-center">
+              <Eye className="mr-2 h-4 w-4" />
+              <img 
+                src={`https://api.visitorbadge.io/api/combined?path=http%3A%2F%2Flocalhost%3A3000%2Fblog%2F${post.id}&countColor=%23263759&style=flat`} 
+                alt="Views" 
+              />
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-2 mb-6">
@@ -119,7 +129,11 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
         )}
 
         <div className="prose prose-lg max-w-none">
-          {renderContent(post.content)}
+          <div className="space-y-4">
+            <Markdown remarkPlugins={[remarkGfm]}>
+              {post.content}
+            </Markdown>
+          </div>
         </div>
 
         <footer className="mt-12 pt-8 border-t">
